@@ -6,7 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """All runtime configuration, loaded from environment / .env file."""
 
-    anthropic_api_key: str
+    anthropic_api_key: str = ""
+    query_intelligence_mode: str = "tiered"  # tiered | haiku
     redis_url: str = "redis://localhost:6379/0"
     searxng_url: str = "http://localhost:8888"
     cache_ttl_hours: int = 24

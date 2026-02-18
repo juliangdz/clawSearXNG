@@ -26,7 +26,7 @@ async def run_pipeline(
 
     Stages:
         0. Cache lookup (return immediately on hit).
-        1. Claude Haiku query intelligence.
+        1. Query intelligence (tiered local rules or Claude Haiku, based on env).
         2. Engine routing by intent.
         3. SearXNG fetch + deduplication.
         4A. Coarse metadata scoring.

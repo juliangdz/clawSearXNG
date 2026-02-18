@@ -1,12 +1,14 @@
 # AI Search Middleware
 
-A production-quality AI-powered search middleware that sits between your application and SearXNG, enriching queries with Claude Haiku intent analysis and re-ranking results with a cross-encoder model.
+A production-quality AI-powered search middleware that sits between your application and SearXNG, with configurable query-intelligence modes (zero-cost tiered local rules or Claude Haiku) and local semantic re-ranking.
 
 ## What This Is
 
 This service acts as an intelligent proxy over a local [SearXNG](https://searxng.github.io/searxng/) instance. Given a plain-text query, it:
 
-1. Classifies the intent and expands the query via Claude Haiku
+1. Classifies intent and expands the query via a configurable mode:
+   - `tiered` (default): local rule-based, no API cost
+   - `haiku`: Claude Haiku API-backed
 2. Routes to the right SearXNG engines for that intent (arxiv for research, pubmed for biomedical, github for code, etc.)
 3. Fetches, deduplicates, and scores results using domain authority, recency, and engine trust
 4. Re-ranks the top candidates with a cross-encoder (semantic relevance) model
@@ -21,7 +23,7 @@ It fits into a larger stack where other services (such as OpenClaw) call it via 
 - **Python 3.12**
 - **Redis** running on `localhost:6379` (default)
 - **SearXNG** running on `http://localhost:8888`
-- An **Anthropic API key** for Claude Haiku
+- **Optional** Anthropic API key (only required for `QUERY_INTELLIGENCE_MODE=haiku`)
 
 ---
 
@@ -51,7 +53,8 @@ cp .env.example .env
 
 | Variable             | Default                        | Description                        |
 |----------------------|--------------------------------|------------------------------------|
-| `ANTHROPIC_API_KEY`  | *(required)*                   | Anthropic API key for Claude Haiku |
+| `ANTHROPIC_API_KEY`  | *(empty)*                      | Anthropic API key (required only in `haiku` mode) |
+| `QUERY_INTELLIGENCE_MODE` | `tiered`                  | `tiered` (local zero-cost) or `haiku` (Anthropic) |
 | `REDIS_URL`          | `redis://localhost:6379/0`     | Redis connection URL               |
 | `SEARXNG_URL`        | `http://localhost:8888`        | SearXNG base URL                   |
 | `CACHE_TTL_HOURS`    | `24`                           | Result cache lifetime in hours     |
@@ -216,6 +219,35 @@ The response JSON is self-contained — parse `results[*].url` and `results[*].s
 
 ## Architecture Overview
 
+### Mode A — `tiered` (default, zero-cost query intelligence)
+
+```text
+User query
+  -> Stage 0 cache
+  -> Stage 1 tiered local analyzer (keyword intent + synonym expansion)
+  -> Stage 2 engine router
+  -> Stage 3 searx fetch + dedup
+  -> Stage 4A metadata coarse rank
+  -> Stage 4B local semantic rank (cross-encoder)
+  -> Stage 5 cache/store/return
+```
+
+### Mode B — `haiku` (API-assisted query intelligence)
+
+```text
+User query
+  -> Stage 0 cache
+  -> Stage 1 Claude Haiku analyzer
+     (with automatic fallback to tiered local analyzer)
+  -> Stage 2 engine router
+  -> Stage 3 searx fetch + dedup
+  -> Stage 4A metadata coarse rank
+  -> Stage 4B local semantic rank (cross-encoder)
+  -> Stage 5 cache/store/return
+```
+
+### Detailed stage flow
+
 The pipeline runs sequentially across five stages for each non-cached query:
 
 ```
@@ -226,7 +258,7 @@ User query
     │  hit: return immediately
     │  miss: continue
     ▼
-[Stage 1] Claude Haiku — intent classification & query expansion
+[Stage 1] Query intelligence — tiered local rules OR Claude Haiku (env-configured)
     │  intent: research | biomedical | code | news | general
     │  expanded_query: synonym-enriched version
     ▼
@@ -252,7 +284,7 @@ User query
 ```
 
 **Graceful degradation:**
-- Claude Haiku failure → fallback to `intent=general`, original query
+- `haiku` mode failure → fallback to tiered local analyzer
 - Cross-encoder failure → metadata scores only
 - Redis failure → skip cache (query still succeeds)
 - SearXNG failure → HTTP 502 with error detail
