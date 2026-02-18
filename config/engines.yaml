@@ -1,0 +1,16 @@
+intents:
+  research:
+    engines: [arxiv, semantic_scholar, ddg]
+    categories: [science]
+  biomedical:
+    engines: [pubmed, semantic_scholar, arxiv]
+    categories: [science]
+  code:
+    engines: [github, ddg, brave]
+    categories: [it]
+  news:
+    engines: [ddg, brave]
+    categories: [news, general]
+  general:
+    engines: [ddg, brave]
+    categories: [general]

@@ -1,0 +1,19 @@
+[Unit]
+Description=AI Search Middleware
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=linuxbrew
+WorkingDirectory=/home/linuxbrew/projects/ai-search
+EnvironmentFile=/home/linuxbrew/projects/ai-search/.env
+ExecStart=/home/linuxbrew/.local/bin/uvicorn src.ai_search.main:app --host 0.0.0.0 --port 7777 --workers 1
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-search
+
+[Install]
+WantedBy=multi-user.target
