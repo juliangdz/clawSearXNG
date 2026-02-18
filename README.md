@@ -71,7 +71,7 @@ In `development` mode, logs are pretty-printed to stdout. In `production`, they 
 ```bash
 make dev
 # or
-uvicorn src.ai_search.main:app --reload --host 0.0.0.0 --port 7777
+uvicorn src.ai_search.main:app --reload --host 127.0.0.1 --port 7777
 ```
 
 ### Production
@@ -79,7 +79,7 @@ uvicorn src.ai_search.main:app --reload --host 0.0.0.0 --port 7777
 ```bash
 make start
 # or
-uvicorn src.ai_search.main:app --host 0.0.0.0 --port 7777 --workers 1
+uvicorn src.ai_search.main:app --host 127.0.0.1 --port 7777 --workers 1
 ```
 
 ### As a systemd Service

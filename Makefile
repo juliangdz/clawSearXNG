@@ -4,10 +4,10 @@ install:
 	pip install -r requirements.txt
 
 dev:
-	uvicorn src.ai_search.main:app --reload --host 0.0.0.0 --port 7777
+	uvicorn src.ai_search.main:app --reload --host 127.0.0.1 --port 7777
 
 start:
-	uvicorn src.ai_search.main:app --host 0.0.0.0 --port 7777 --workers 1
+	uvicorn src.ai_search.main:app --host 127.0.0.1 --port 7777 --workers 1
 
 test:
 	pytest tests/ -v
